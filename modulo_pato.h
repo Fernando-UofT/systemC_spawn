@@ -1,5 +1,7 @@
 #include <systemc.h>
-#include <string.h>
+#include <string>
+#include <random>
+
 class modulo_pato : public sc_module
 { 
 public:

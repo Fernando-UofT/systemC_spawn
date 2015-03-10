@@ -16,29 +16,63 @@ modulo_pato::modulo_pato(sc_module_name duck, int N=2, int Var)
 }
 void modulo_pato::spawned_thread() // This will be spawned 
 {
-   cout << endl
-        << "\tINFO: spawned_thread "
-        << sc_get_current_process_handle().name()
-        << "\t @ " << sc_time_stamp() << endl << endl;
-   wait(10,SC_NS); 
-   cout << "\tINFO: Exiting" << endl;
+   std::random_device rd;     // only used once to initialise engine
+   std::mt19937 rng(rd());      // random-number engine used
+   std::uniform_int_distribution<> uni(1,5); // guaranteed unbiased
+
+   auto number = uni(rng);
+
+   std::cout << "Cycles: " << number << std::endl;
+
+   for(unsigned i=0;i<number;++i)
+   {
+      wait(iclk->posedge_event());
+      cout << endl
+           << "\tINFO: spawned_thread "
+           << sc_get_current_process_handle().name()
+           << "\t @ " << sc_time_stamp() << endl << endl;
+   }
 }
 void modulo_pato::quack( )
 {
    char nombre[8];
-   while(true){
-   ++var;
-   sprintf(nombre,"patito%d",var);
-   wait(n,SC_NS);
-   sc_process_handle h = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this),nombre);
-   std::cout << "Waiting ..." << std::endl;
-   wait(h.terminated_event());
-   std::cout << "Done" << std::endl;
-   std::cout << "The thread example getting executed in the module instance: "
-             << name() << std::endl;
-   std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;
-   std::cout << "Var is: " << var << std::endl;
+   unsigned num_procs = 3;
+   sc_process_handle h[num_procs];
+   std::cout << "Executing in the module instance: "
+             << name() << std::endl << std::endl;
+
+   wait(iclk->posedge_event());
+   for(unsigned i=0;i<num_procs;++i)
+   {
+      sprintf(nombre,"patito%d",i);
+      
+
+      std::cout << "Spawning thread " << i << " ..." << std::endl;
+      h[i] = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this),nombre);
+      //wait(h.terminated_event());
    }
+   std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;
+   //for(unsigned i=0;i<num_procs;++i)
+   std::cout << "Waiting for threads to finish ... " << std::endl;
+   
+   do
+   {
+      bool any_running = false;
+      wait(iclk->posedge_event());
+      for(unsigned i=0;i<num_procs;++i)
+      {
+         if ( !h[i].terminated() )
+            any_running = true;
+      }
+      if ( !any_running )
+         break;
+
+      //wait(h[0].terminated_event() & h[1].terminated_event() & h[2].terminated_event());
+   }
+   while(true);
+   std::cout << "Done" << std::endl;
+   std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;
+   sc_stop();
 }
 
 int sc_main(int argc, char *argv[])
@@ -47,10 +81,10 @@ int sc_main(int argc, char *argv[])
    const sc_time t_PERIOD (18,SC_NS) ;
    sc_clock clk ("clk", t_PERIOD);   
    modulo_pato pato_cafe("InstancePato",5);
-   modulo_pato pato_cafe1("InstancePato1",3);
+   //modulo_pato pato_cafe1("InstancePato1",3);
    pato_cafe(clk);
-   pato_cafe1(clk);
-   sc_start(25,SC_NS);
+   //pato_cafe1(clk);
+   sc_start();
    std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;
    return 0;
 }
