@@ -16,23 +16,29 @@ modulo_pato::modulo_pato(sc_module_name duck, int N=2, int Var)
 }
 void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned 
 {
-   std::random_device rd;     // only used once to initialise engine
-   std::mt19937 rng(rd());      // random-number engine used
-   std::uniform_int_distribution<> uni(1,5); // guaranteed unbiased
+   std::ifstream requests_source;
+   std::stringstream str_build;
+   bool valid_read = true;
+   std::string request;
 
-   auto number = uni(rng);
+   str_build << "files/input" << file_id << ".dat";
+   std::string file = str_build.str();
+   str_build.str( std::string(  ) );
 
-   std::cout << "ID " << file_id << ": Cycles -> " << number << "\t @ " << sc_time_stamp()  << std::endl;
+   requests_source.open (file, std::ios::in | std::ios::binary);
 
-   for(unsigned i=0;i<number;++i)
+   valid_read = std::getline (requests_source,request);
+   std::cout << "ID " << file_id << " " << request << "\t @ " << sc_time_stamp() << std::endl;
+   for( unsigned i = 0; i < request.size(); ++i )
    {
-      wait(iclk->posedge_event());
-      cout << endl
-           << "\tID " << file_id << ": spawned_thread "
-           << sc_get_current_process_handle().name()
-           << "\t @ " << sc_time_stamp() << endl << endl;
+      std::cout << request.at(i) << std::endl;
    }
+
+   requests_source.close();
+
+      wait(iclk->posedge_event());
 }
+
 void modulo_pato::quack( )
 {
    char nombre[8];
@@ -48,7 +54,7 @@ void modulo_pato::quack( )
       
 
       std::cout << "Spawning thread " << i << " ..." << std::endl;
-      h[i] = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this,i),nombre);
+      h[i] = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this,i+1),nombre);
       //wait(h.terminated_event());
    }
    std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;

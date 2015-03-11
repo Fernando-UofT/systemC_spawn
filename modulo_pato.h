@@ -1,6 +1,9 @@
 #include <systemc.h>
 #include <string>
 #include <random>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 class modulo_pato : public sc_module
 { 
