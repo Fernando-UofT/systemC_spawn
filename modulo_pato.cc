@@ -14,7 +14,7 @@ modulo_pato::modulo_pato(sc_module_name duck, int N=2, int Var)
    SC_THREAD(quack);
    sensitive << iclk.neg();
 }
-void modulo_pato::spawned_thread() // This will be spawned 
+void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned 
 {
    std::random_device rd;     // only used once to initialise engine
    std::mt19937 rng(rd());      // random-number engine used
@@ -22,13 +22,13 @@ void modulo_pato::spawned_thread() // This will be spawned
 
    auto number = uni(rng);
 
-   std::cout << "Cycles: " << number << std::endl;
+   std::cout << "ID " << file_id << ": Cycles -> " << number << "\t @ " << sc_time_stamp()  << std::endl;
 
    for(unsigned i=0;i<number;++i)
    {
       wait(iclk->posedge_event());
       cout << endl
-           << "\tINFO: spawned_thread "
+           << "\tID " << file_id << ": spawned_thread "
            << sc_get_current_process_handle().name()
            << "\t @ " << sc_time_stamp() << endl << endl;
    }
@@ -48,7 +48,7 @@ void modulo_pato::quack( )
       
 
       std::cout << "Spawning thread " << i << " ..." << std::endl;
-      h[i] = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this),nombre);
+      h[i] = sc_spawn(sc_bind(&modulo_pato::spawned_thread,this,i),nombre);
       //wait(h.terminated_event());
    }
    std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;
@@ -58,6 +58,7 @@ void modulo_pato::quack( )
    do
    {
       bool any_running = false;
+      std::cout << "==========================================================================" << std::endl;
       wait(iclk->posedge_event());
       for(unsigned i=0;i<num_procs;++i)
       {

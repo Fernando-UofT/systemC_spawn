@@ -12,7 +12,7 @@ public:
    modulo_pato(sc_module_name duck, int n, int var=5); 
    //methods,threads:
    void quack();
-   void spawned_thread();
+   void spawned_thread(unsigned file_id);
 private:
    const int n;
 };
