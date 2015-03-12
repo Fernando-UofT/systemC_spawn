@@ -12,7 +12,7 @@ modulo_pato::modulo_pato(sc_module_name duck, int N=2, int Var)
 {
    SC_HAS_PROCESS(modulo_pato); 
    SC_THREAD(quack);
-   sensitive << iclk.neg();
+   sensitive << clk.neg();
 }
 void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned 
 {
@@ -36,7 +36,7 @@ void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned
 
    requests_source.close();
 
-      wait(iclk->posedge_event());
+      wait(clk->posedge_event());
 }
 
 void modulo_pato::quack( )
@@ -47,7 +47,7 @@ void modulo_pato::quack( )
    std::cout << "Executing in the module instance: "
              << name() << std::endl << std::endl;
 
-   wait(iclk->posedge_event());
+   wait(clk->posedge_event());
    for(unsigned i=0;i<num_procs;++i)
    {
       sprintf(nombre,"patito%d",i);
@@ -65,7 +65,7 @@ void modulo_pato::quack( )
    {
       bool any_running = false;
       std::cout << "==========================================================================" << std::endl;
-      wait(iclk->posedge_event());
+      wait(clk->posedge_event());
       for(unsigned i=0;i<num_procs;++i)
       {
          if ( !h[i].terminated() )
