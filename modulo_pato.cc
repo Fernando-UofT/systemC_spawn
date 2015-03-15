@@ -18,25 +18,61 @@ void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned
 {
    std::ifstream requests_source;
    std::stringstream str_build;
-   bool valid_read = true;
+   bool read_free = false;
    std::string request;
 
    str_build << "files/input" << file_id << ".dat";
    std::string file = str_build.str();
    str_build.str( std::string(  ) );
 
+   bool read_line = true;
+   bool check_if_free = false;
+   bool streaming = false;
+
+
    requests_source.open (file, std::ios::in | std::ios::binary);
 
-   valid_read = std::getline (requests_source,request);
-   std::cout << "ID " << file_id << " " << request << "\t @ " << sc_time_stamp() << std::endl;
-   for( unsigned i = 0; i < request.size(); ++i )
+
+   while( true )
    {
-      std::cout << request.at(i) << std::endl;
-   }
-
-   requests_source.close();
-
       wait(clk->posedge_event());
+      unsigned i = 0;
+      done[file_id].write(0);
+
+      if ( read_line )
+      {
+         if ( !std::getline( requests_source,request ) )
+            break;
+         read_line = false;
+         check_if_free = true;
+      }
+      else if ( check_if_free )
+      {
+         read_free = free[file_id].read();
+         if ( read_free )
+         {
+            valid_req[file_id].write(1);
+
+            check_if_free = false;
+            streaming = true;
+         }
+      }
+      else if ( streaming )
+      {
+         if ( i < request.size() )
+         {
+            req_out[file_id].write(request.at(i));
+            ++i;
+         }
+         else
+         {
+            done[file_id].write(1);
+            streaming = false;
+            read_line = true;
+         }
+      }
+   }
+   requests_source.close();
 }
 
 void modulo_pato::quack( )
@@ -48,7 +84,7 @@ void modulo_pato::quack( )
              << name() << std::endl << std::endl;
 
    wait(clk->posedge_event());
-   for(unsigned i=0;i<num_procs;++i)
+   for(unsigned i=0; i<REQ_MODULES; ++i)
    {
       sprintf(nombre,"patito%d",i);
       
