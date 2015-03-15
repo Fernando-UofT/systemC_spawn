@@ -1,4 +1,4 @@
-#include "memory_arbiter.h"
+#include "parser_arbiter.h"
 //#include "config.h"
 #include <systemc>
 #include <cstdlib>
@@ -6,128 +6,84 @@
 using namespace sc_core;
 using namespace sc_dt;
 
-memory_arbiter::memory_arbiter( sc_module_name mem_arbiter )
-: sc_module( mem_arbiter )
+parser_arbiter::parser_arbiter( sc_module_name parse_arbiter )
+: sc_module( parse_arbiter )
 {
-   SC_HAS_PROCESS( memory_arbiter ); 
+   SC_HAS_PROCESS( parser_arbiter ); 
    SC_THREAD( arbitrate );
-      sensitive << enable[0];
-      sensitive << enable[1];
-      sensitive << enable[2];
-      sensitive << enable[3];
-      sensitive << mem_done;
-      sensitive << dummy_done;
-   //sensitive << data_in(  );
+      sensitive << clk.pos();
+      for (unsigned i=0; i<REQ_MODULES; ++i)
+      {
+         sensitive << valid_req[i];
+         sensitive << done[i];
+         sensitive << req_in[i];
+         sensitive << free[i];
+      }
 }
 
-void memory_arbiter::arbitrate( )            //this thread will check the contents of the memory, comparing each key with the 
+void parser_arbiter::arbitrate( )            //this thread will check the contents of the memory, comparing each key with the 
 {                                              //requested one
-   bool enable_get;
+   bool valid_get;
 
-   bool rw_get;
+   bool done_get;
    
-   Datum address_get;
-   
-   Datum data_get;
+   Req_t request_get;
    
    int locked = 1;                                         //unlocked                                                                                                        
-   bool done_get;
-   bool dummy_get;
    int i = -1;
+   unsigned free_module[REQ_MODULES] = -1;                 //flags to know if a parser is available
+   unsigned module;                                        //req module under analysis
+   bool attending[REQ_MODULES];                            //is any request being served? Flags
 
+
+   for ( module = 0; module < REQ_MODULES; ++module )   //initialization
+   {
+      free[module]->write(0);
+      attending[module] = false;
+      free_module[module] = -1;
+   }
    while ( true )
    {
       ++i;
-      for ( unsigned module = 0; module < MEM_MODULES; ++module )
+      for ( module = 0; module < REQ_MODULES; ++module )  //check all req modules
       {
-         
-         enable_get = enable[module]->read( );
-         rw_get = rw[module]->read( );
-         dummy_get = dummy->read();
-         address_get = address[module]->read();
-         //std::cout << i << ",Memory arbiter,check for requests," << module << ",[" << address_get << "]," << sc_time_stamp().value() << " ps" << std::endl;
-
-         data_get = data[module]->read( );
-      
-         if( enable_get == 1 )
+         if ( attending[module] )    //if we a;ready got a valid, lets see if we are done, an if not, lets read the request
          {
-            locked = sel_mutex.trylock( );
-          
-            if( locked  == 0 )
+            free[module]->write(0);
+            done_get = done[module]->read();
+            if ( done_get == 0 )                      //if request is still being sent ...
             {
-               ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( " << module << " ) enabled at " << sc_time_stamp().value() << " ps" << std::endl;
-               //std::cout << i << ",Memory arbiter," << module << ",enabled,," << sc_time_stamp().value() << " ps" << std::endl;
+               request_get = req_in->read();
+               std::cout << module << ":" << free_module << " " << request_get << std::endl; //will change to a write to one of the parsers
+            }
+            else                                      //if we are done, free mutex, clear
+            {
+               sel_mutex[module].unlock( );
+               attending[module] = false;
+               free_module[module] = -1;
+            }
+         }
+         valid_get = valid_req[module]->read( );
 
-               ack[module]->write ( 1 );
-
-               if ( dummy_get == 1 )
+         if ( valid_get == 1 )                        //if a req generator has a new request
+         {
+            for ( unsigned out_module = 0; out_module < PARSE_MODULES; ++out_module ) //check if any parser is available
+            {
+               locked = sel_mutex[out_module].trylock( );        //try to lock a mutex
+               if ( locked  == 0 )                               //if success
                {
-                  ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( " << module << " ) dummy at " << sc_time_stamp().value() << " ps" << std::endl;
-                  //std::cout << i << ",Memory arbiter," << module << ",dummy,," << sc_time_stamp().value() << " ps" << std::endl;
-                  wait( MEM_DELAY * PERIOD, UNITS );
-                  
-                  do
-                  {
-                     wait( );
-                     ack[module]->write( 0 );
-                     ++i;
-                     done_get = dummy_done->read( );
-                  }
-                  while( done_get !=  1 );
-
-                  ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( " << module << " ) dummy done at " << sc_time_stamp().value() << " ps" << std::endl;
-                  //std::cout << i << ",Memory arbiter," << module << ",dummy done,," << sc_time_stamp().value() << " ps" << std::endl;
-
-                  sel_mutex.unlock( );
+                  free_module[module] = out_module;                 //take note of the parser we'll use
+                  attending[module] = true;                         //we'll attend a request
+                  break;
                }
-
-               else
-               {
-                  mem_enable->write( enable_get );
-                  mem_rw->write( rw_get );
-                  mem_data->write( data_get );
-                  mem_address->write( address_get );
-                  
-                  if ( rw_get == 1 )                       // read request 
-                  {
-                     do
-                     {
-                        wait( );
-                        ack[module]->write( 0 );
-                        ++i;
-                        data_get = mem_data->read();
-                        done_get = mem_done->read( );
-                     }
-                     while( done_get !=  1 );
-                     ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( read done: " << module << " ) at " << sc_time_stamp().value() << " ps" << std::endl;
-                     //std::cout << i << ",Memory arbiter," << module << ",read done,," << sc_time_stamp().value() << " ps" << std::endl;
-                     data[MEM_MODULES]->write(data_get);
-                     sel_mutex.unlock( );
-                  }
-                  else                                     // write request
-                  {
-                     do
-                     {
-                        wait( );
-                        ack[module]->write( 0 );
-                        ++i;
-                        done_get = mem_done->read( );
-                     }
-                     while( done_get !=  1 );
-                     ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( write done: " << module << " ) at " << sc_time_stamp().value() << " ps" << std::endl;
-                     //std::cout << i << ",Memory arbiter," << module << ",write done,," << sc_time_stamp().value() << " ps" << std::endl;
-                     sel_mutex.unlock( );
-                  } 
-                  mem_enable->write( 0 );
-               } // else (dummy_get = 0) 
-
-            } // if locked
-         } // if enable
-      } //for
-      ////std::cout << " \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << i << " | Memory arbiter ( lets wait ) at " << sc_time_stamp().value() << " ps" << std::endl;
-      //std::cout << i << ",Memory arbiter,lets wait,,," << sc_time_stamp().value() << " ps" << std::endl;
-         
-      wait( );
+            }
+            if ( free_module[module] > -1 )                      //if we found an available parser, tell the req generator
+            {
+               free[module]->write(1);
+            }
+         }
+      }
+      wait( );    //don't monopolize, you bastard
          
    } //while
 }

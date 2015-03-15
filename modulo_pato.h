@@ -21,7 +21,7 @@ public:
    sc_out<bool> done[REQ_MODULES];
    sc_inout<bool> free[REQ_MODULES];
    sc_out<bool> valid_req[REQ_MODULES];
-   sc_port<sc_signal_out_if<REQ_W> > req_out[REQ_MODULES];
+   sc_port<sc_signal_out_if<Req_t> > req_out[REQ_MODULES];
 
    int var;
    //constructor:

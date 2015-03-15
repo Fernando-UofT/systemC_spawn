@@ -12,7 +12,7 @@ modulo_pato::modulo_pato(sc_module_name duck, int N=2, int Var)
 {
    SC_HAS_PROCESS(modulo_pato); 
    SC_THREAD(quack);
-   sensitive << clk.neg();
+      sensitive << clk.pos();
 }
 void modulo_pato::spawned_thread(unsigned file_id) // This will be spawned 
 {
