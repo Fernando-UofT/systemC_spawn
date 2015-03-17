@@ -11,7 +11,6 @@ parser_arbiter::parser_arbiter( sc_module_name parse_arbiter )
 {
    SC_HAS_PROCESS( parser_arbiter ); 
    SC_THREAD( arbitrate );
-      sensitive << clk.pos();
       for (unsigned i=0; i<REQ_MODULES; ++i)
       {
          sensitive << valid_req[i];
@@ -31,7 +30,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
    
    int locked = 1;                                         //unlocked                                                                                                        
    int i = -1;
-   unsigned free_module[REQ_MODULES] = -1;                 //flags to know if a parser is available
+   unsigned free_module[REQ_MODULES];                      //flags to know if a parser is available
    unsigned module;                                        //req module under analysis
    bool attending[REQ_MODULES];                            //is any request being served? Flags
 
@@ -53,7 +52,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
             done_get = done[module]->read();
             if ( done_get == 0 )                      //if request is still being sent ...
             {
-               request_get = req_in->read();
+               request_get = req_in[module]->read();
                std::cout << module << ":" << free_module << " " << request_get << std::endl; //will change to a write to one of the parsers
             }
             else                                      //if we are done, free mutex, clear
