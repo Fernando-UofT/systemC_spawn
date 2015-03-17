@@ -31,6 +31,11 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
 
 
    requests_source.open (file, std::ios::in | std::ios::binary);
+   if (!requests_source.is_open()) 
+   {
+       std::cout << "Input file couldn't be openned" << std::endl; 
+       sc_stop();
+   }
 
 
    while( true )
@@ -41,6 +46,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
 
       if ( read_line )
       {
+         std::cout << "Reading line" << std::endl;
          if ( !std::getline( requests_source,request ) )
             break;
          read_line = false;
@@ -48,8 +54,9 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
       }
       else if ( check_if_free )
       {
+         std::cout << file_id << " : Checking if free" << std::endl;
          read_free = free[file_id]->read();
-         if ( read_free )
+         if ( read_free == 1 )
          {
             valid_req[file_id]->write(1);
 
@@ -59,6 +66,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
       }
       else if ( streaming )
       {
+         std::cout << "Streaming" << std::endl;
          if ( i < request.size() )
          {
             req_out[file_id]->write(request.at(i));
@@ -87,10 +95,9 @@ void req_generator::req_spawner( )
    for(unsigned i=0; i<REQ_MODULES; ++i)
    {
       sprintf(nombre,"patito%d",i);
-      
 
       std::cout << "Spawning thread " << i << " ..." << std::endl;
-      h[i] = sc_spawn(sc_bind(&req_generator::spawned_thread,this,i+1),nombre);
+      h[i] = sc_spawn(sc_bind(&req_generator::spawned_thread,this,i),nombre);
       //wait(h.terminated_event());
    }
    std::cout << "Time is: " << sc_core::sc_time_stamp() << std::endl;

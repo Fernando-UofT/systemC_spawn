@@ -37,7 +37,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
 
    for ( module = 0; module < REQ_MODULES; ++module )   //initialization
    {
-      free[module]->write(0);
+      free[module]->write(1);
       attending[module] = false;
       free_module[module] = -1;
    }
@@ -53,7 +53,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
             if ( done_get == 0 )                      //if request is still being sent ...
             {
                request_get = req_in[module]->read();
-               std::cout << module << ":" << free_module << " " << request_get << std::endl; //will change to a write to one of the parsers
+               std::cout << module << "~~~~~~~>" << free_module[module] << " " << (char)request_get << std::endl; //will change to a write to one of the parsers
             }
             else                                      //if we are done, free mutex, clear
             {
@@ -66,6 +66,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
 
          if ( valid_get == 1 )                        //if a req generator has a new request
          {
+            std::cout << "Valid" << std::endl;
             for ( unsigned out_module = 0; out_module < PARSE_MODULES; ++out_module ) //check if any parser is available
             {
                locked = sel_mutex[out_module].trylock( );        //try to lock a mutex
@@ -80,6 +81,10 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
             {
                free[module]->write(1);
             }
+         }
+         else
+         {
+            std::cout << "Not valid" << std::endl;
          }
       }
       wait( );    //don't monopolize, you bastard

@@ -1,0 +1,5 @@
+0|2013-12-05 21:35:000|[PACMAN] Running 'pacman -r /mnt -Sy --cachedir=/mnt/var/cache/pacman/pkg --noconfirm base grub'
+0|2013-12-05 21:35:001|[PACMAN] synchronizing package lists
+0|2013-12-05 21:36:000|[PACMAN] installed linux-api-headers (3.10.6-1)
+0|2013-12-05 21:36:001|[PACMAN] installed tzdata (2013h-1)
+0|2013-12-05 21:36:002|[PACMAN] installed iana-etc (2.30-4)
