@@ -36,7 +36,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
 
    for ( module = 0; module < REQ_MODULES; ++module )   //initialization
    {
-      free[module]->write(1);
+      free[module]->write(0);
       attending[module] = false;
       free_module[module] = -1;
    }

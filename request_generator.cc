@@ -52,6 +52,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          i = 0;
          read_line = false;
          check_if_free = true;
+         valid_req[file_id]->write(1);
       }
       else if ( check_if_free )
       {
@@ -59,8 +60,6 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          read_free = free[file_id]->read();
          if ( read_free == 1 )
          {
-            valid_req[file_id]->write(1);
-
             check_if_free = false;
             streaming = true;
          }
