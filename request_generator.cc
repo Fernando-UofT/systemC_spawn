@@ -29,6 +29,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
    bool check_if_free = false;
    bool streaming = false;
 
+   unsigned i = 0;
 
    requests_source.open (file, std::ios::in | std::ios::binary);
    if (!requests_source.is_open()) 
@@ -41,7 +42,6 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
    while( true )
    {
       wait(clk->posedge_event());
-      unsigned i = 0;
       done[file_id]->write(0);
 
       if ( read_line )
@@ -49,6 +49,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          std::cout << "Reading line" << std::endl;
          if ( !std::getline( requests_source,request ) )
             break;
+         i = 0;
          read_line = false;
          check_if_free = true;
       }
@@ -66,9 +67,12 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
       }
       else if ( streaming )
       {
+         if ( i == 0 )
+            valid_req[file_id]->write(0);
          std::cout << "Streaming" << std::endl;
          if ( i < request.size() )
          {
+            std::cout << "# " << i << ":" << request.at(i) << " #" << std::endl;
             req_out[file_id]->write(request.at(i));
             ++i;
          }

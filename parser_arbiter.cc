@@ -16,7 +16,6 @@ parser_arbiter::parser_arbiter( sc_module_name parse_arbiter )
          sensitive << valid_req[i];
          sensitive << done[i];
          sensitive << req_in[i];
-         sensitive << free[i];
       }
 }
 
@@ -30,8 +29,8 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
    
    int locked = 1;                                         //unlocked                                                                                                        
    int i = -1;
-   unsigned free_module[REQ_MODULES];                      //flags to know if a parser is available
-   unsigned module;                                        //req module under analysis
+   int free_module[REQ_MODULES];                      //flags to know if a parser is available
+   int module;                                        //req module under analysis
    bool attending[REQ_MODULES];                            //is any request being served? Flags
 
 
@@ -53,13 +52,14 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
             if ( done_get == 0 )                      //if request is still being sent ...
             {
                request_get = req_in[module]->read();
-               std::cout << module << "~~~~~~~>" << free_module[module] << " " << (char)request_get << std::endl; //will change to a write to one of the parsers
+               std::cout << "i = " << i << ", module = " << module << "~~~~~~~>" << free_module[module] << " " << (char)request_get << std::endl; //will change to a write to one of the parsers
             }
             else                                      //if we are done, free mutex, clear
             {
                sel_mutex[module].unlock( );
                attending[module] = false;
                free_module[module] = -1;
+               std::cout << "Module is now free" << std::endl; //will change to a write to one of the parsers
             }
          }
          valid_get = valid_req[module]->read( );
@@ -72,13 +72,16 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
                locked = sel_mutex[out_module].trylock( );        //try to lock a mutex
                if ( locked  == 0 )                               //if success
                {
+                  std::cout << "##################" << module << ":" << out_module << std::endl;
                   free_module[module] = out_module;                 //take note of the parser we'll use
                   attending[module] = true;                         //we'll attend a request
                   break;
                }
             }
+            std::cout << "##################" << module << ":" << free_module[module] << std::endl;
             if ( free_module[module] > -1 )                      //if we found an available parser, tell the req generator
             {
+               std::cout << "###########################################################################" << std::endl;
                free[module]->write(1);
             }
          }
