@@ -49,7 +49,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          std::cout << "Reading line" << std::endl;
          if ( !std::getline( requests_source,request ) )
             break;
-         i = 0;
+         i = 1;
          read_line = false;
          check_if_free = true;
          valid_req[file_id]->write(1);
@@ -62,24 +62,25 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          {
             check_if_free = false;
             streaming = true;
+            std::cout << "# " << file_id << ":" << request.at(0) << " #" << std::endl;
+            req_out[file_id]->write(request.at(0));
          }
       }
       else if ( streaming )
       {
-         if ( i == 0 )
-            valid_req[file_id]->write(0);
+         valid_req[file_id]->write(0);
          std::cout << "Streaming" << std::endl;
          if ( i < request.size() )
          {
             std::cout << "# " << file_id << ":" << request.at(i) << " #" << std::endl;
             req_out[file_id]->write(request.at(i));
             ++i;
-         }
-         else
-         {
-            done[file_id]->write(1);
-            streaming = false;
-            read_line = true;
+            if ( i == request.size() )
+            {
+               done[file_id]->write(1);
+               streaming = false;
+               read_line = true;
+            }
          }
       }
    }

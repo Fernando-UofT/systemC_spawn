@@ -14,7 +14,7 @@ parser_arbiter::parser_arbiter( sc_module_name parse_arbiter )
       for (unsigned i=0; i<REQ_MODULES; ++i)
       {
          sensitive << valid_req[i];
-         sensitive << done[i];
+         //sensitive << done[i];
          sensitive << req_in[i];
       }
 }
@@ -55,12 +55,9 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
          {
             free[module]->write(0);
             done_get = done[module]->read();
-            if ( done_get == 0 )                      //if request is still being sent ...
-            {
-               request_get = req_in[module]->read();
-               std::cout << "i = " << i << ", module = " << module << "~~~~~~~>" << linked_module[module] << " " << (char)request_get << std::endl; //will change to a write to one of the parsers
-            }
-            else                                      //if we are done, free mutex, clear
+            request_get = req_in[module]->read();
+            std::cout << "i = " << i << ", module = " << module << "~~~~~~~>" << linked_module[module] << " " << (char)request_get << std::endl; //will change to a write to one of the parsers
+            if ( done_get == 1 )                      //if request is still being sent ...
             {
                std::cout << module << ": **** Done signal" << std::endl;
 
