@@ -19,7 +19,8 @@ public:
    sc_out<bool> free[REQ_MODULES];
 
    //mutex
-   sc_mutex sel_mutex[PARSE_MODULES];
+   //sc_mutex sel_mutex[PARSE_MODULES];
+   sc_mutex sel_mutex;
    //constructor:
    parser_arbiter(sc_module_name mem_arbiter); 
    //methods,threads:

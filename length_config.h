@@ -8,7 +8,7 @@
 #define LINE_SIZE                       8  //bytes
 #define MEM_SIZE                536870912  //number of words
 #define MODULES                         1  //number of modules sharing memory allocator
-#define REQ_MODULES                     1  //number of modules for requests generation
+#define REQ_MODULES                     3  //number of modules for requests generation
 #define PARSE_MODULES                   1  //number of modules to parse requests
 #define MEM_MODULES                     2  //number of modules sharing memory allocator
 #define KEY_SIZE                      256  //number of bits for key

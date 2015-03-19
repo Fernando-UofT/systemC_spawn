@@ -71,7 +71,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          std::cout << "Streaming" << std::endl;
          if ( i < request.size() )
          {
-            std::cout << "# " << i << ":" << request.at(i) << " #" << std::endl;
+            std::cout << "# " << file_id << ":" << request.at(i) << " #" << std::endl;
             req_out[file_id]->write(request.at(i));
             ++i;
          }
@@ -83,6 +83,7 @@ void req_generator::spawned_thread(unsigned file_id) // This will be spawned
          }
       }
    }
+   std::cout << "That was all ... I'm ...  sorry" << std::endl;
    requests_source.close();
 }
 
@@ -112,7 +113,7 @@ void req_generator::req_spawner( )
       bool any_running = false;
       std::cout << "==========================================================================" << std::endl;
       wait(clk->posedge_event());
-      for(unsigned i=0;i<num_procs;++i)
+      for( unsigned i=0; i < REQ_MODULES; ++i )
       {
          if ( !h[i].terminated() )
             any_running = true;
