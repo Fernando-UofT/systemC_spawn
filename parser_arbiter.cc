@@ -69,7 +69,7 @@ void parser_arbiter::arbitrate( )            //this thread will check the conten
          }
          valid_get = valid_req[module]->read( );
 
-         if ( valid_get == 1 )                        //if a req generator has a new request
+         if ( valid_get == 1 && !attending[module] )                        //if a req generator has a new request
          {
             std::cout << "Valid" << std::endl;
             if ( sel_mutex.trylock() == 0 )
