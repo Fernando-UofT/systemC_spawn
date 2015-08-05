@@ -8,3 +8,4 @@ g++ -I. -I$SYSTEMC_HOME/include \
     -Wl,-rpath=$SYSTEMC_HOME/lib-linux64 \
     -o patito modulo_pato.cc \
     -lsystemc -lm -std=c++11
+
